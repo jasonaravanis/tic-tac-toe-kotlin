@@ -1,12 +1,12 @@
 package tictactoe
 
+const val BOARD_ROWS = 3
+const val BOARD_COLUMNS = 3
+const val EMPTY_SPACE = '_'
+
 fun convertBoardStringToMatrix(board: String): MutableList<MutableList<Char>> {
     val matrix =
-        mutableListOf(
-            mutableListOf<Char>('_', '_', '_'),
-            mutableListOf<Char>('_', '_', '_'),
-            mutableListOf<Char>('_', '_', '_'),
-        )
+        MutableList(BOARD_ROWS) { MutableList(BOARD_COLUMNS) { EMPTY_SPACE } }
 
     for (i in board.indices) {
         var row: Int
@@ -60,14 +60,30 @@ fun isWinByPlayer(
         return isWin
     }
 
-//    fun isColumnWin(): Boolean {
-//    }
+    fun isColumnWin(): Boolean {
+        var isWin = false
+
+        for (columnIndex in 0 until BOARD_COLUMNS) {
+            val currentColumn = mutableListOf<Char>()
+            for (rowIndex in 0 until BOARD_ROWS) {
+                currentColumn.add(boardMatrix[rowIndex][columnIndex])
+            }
+            if (currentColumn.all { it == player.token }) {
+                isWin = true
+                break
+            } else {
+                currentColumn.clear()
+            }
+        }
+
+        return isWin
+    }
 //
 //    fun isDiagonalWin(): Boolean {
 //    }
 
 //    return isRowWin() || isColumnWin() || isDiagonalWin()
-    return isRowWin()
+    return isColumnWin()
 }
 
 fun getGameStateFromMatrix(boardMatrix: MutableList<MutableList<Char>>) {
@@ -80,7 +96,7 @@ fun main() {
 
     printBoard(boardMatrix)
 
-    val isRowWinByX = isWinByPlayer(boardMatrix, Player.X)
+    val colWinByO = isWinByPlayer(boardMatrix, Player.O)
 
-    println("Is row win by X: $isRowWinByX")
+    println("Is column win by O: $colWinByO")
 }
