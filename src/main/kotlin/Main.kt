@@ -4,6 +4,13 @@ const val BOARD_ROWS = 3
 const val BOARD_COLUMNS = 3
 const val EMPTY_SPACE = '_'
 
+enum class Player(
+    val token: Char,
+) {
+    X('X'),
+    O('O'),
+}
+
 fun convertBoardStringToMatrix(board: String): MutableList<MutableList<Char>> {
     val matrix =
         MutableList(BOARD_ROWS) { MutableList(BOARD_COLUMNS) { EMPTY_SPACE } }
@@ -28,7 +35,7 @@ fun convertBoardStringToMatrix(board: String): MutableList<MutableList<Char>> {
 }
 
 fun printBoard(boardMatrix: MutableList<MutableList<Char>>) {
-    print(
+    println(
         """
         ---------
         | ${boardMatrix[0][0]} ${boardMatrix[0][1]} ${boardMatrix[0][2]} |
@@ -37,13 +44,6 @@ fun printBoard(boardMatrix: MutableList<MutableList<Char>>) {
         ---------
         """.trimIndent(),
     )
-}
-
-enum class Player(
-    val token: Char,
-) {
-    X('X'),
-    O('O'),
 }
 
 fun isWinByPlayer(
@@ -78,12 +78,22 @@ fun isWinByPlayer(
 
         return isWin
     }
-//
-//    fun isDiagonalWin(): Boolean {
-//    }
 
-//    return isRowWin() || isColumnWin() || isDiagonalWin()
-    return isColumnWin()
+    fun isDiagonalWin(): Boolean {
+        val northWestToSouthEast = mutableListOf<Char>()
+        for (i in 0 until BOARD_COLUMNS) {
+            northWestToSouthEast.add(boardMatrix[i][i])
+        }
+
+        val southWestToNorthEast = mutableListOf<Char>()
+        for (i in 0 until BOARD_COLUMNS) {
+            southWestToNorthEast.add(boardMatrix[BOARD_ROWS - 1 - i][i])
+        }
+
+        return northWestToSouthEast.all { it == player.token } || southWestToNorthEast.all { it == player.token }
+    }
+
+    return isRowWin() || isColumnWin() || isDiagonalWin()
 }
 
 fun getGameStateFromMatrix(boardMatrix: MutableList<MutableList<Char>>) {
@@ -96,7 +106,9 @@ fun main() {
 
     printBoard(boardMatrix)
 
-    val colWinByO = isWinByPlayer(boardMatrix, Player.O)
+    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
+    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
 
-    println("Is column win by O: $colWinByO")
+    println("isWinByX: $isWinByX")
+    println("isWinByO: $isWinByO")
 }
