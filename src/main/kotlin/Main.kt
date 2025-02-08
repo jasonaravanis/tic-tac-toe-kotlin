@@ -1,5 +1,7 @@
 package tictactoe
 
+import kotlin.math.abs
+
 const val BOARD_ROWS = 3
 const val BOARD_COLUMNS = 3
 const val EMPTY_SPACE = '_'
@@ -96,7 +98,32 @@ fun isWinByPlayer(
     return isRowWin() || isColumnWin() || isDiagonalWin()
 }
 
-fun getGameStateFromMatrix(boardMatrix: MutableList<MutableList<Char>>) {
+fun isGameComplete(boardMatrix: MutableList<MutableList<Char>>): Boolean {
+    var isComplete = true
+    for (row in 0 until BOARD_ROWS) {
+        for (column in 0 until BOARD_COLUMNS) {
+            if (boardMatrix[row][column] == EMPTY_SPACE) {
+                isComplete = false
+                break
+            }
+        }
+    }
+    return isComplete
+}
+
+fun isBoardStateValid(boardMatrix: MutableList<MutableList<Char>>): Boolean {
+    var playerXMoveCount = 0
+    var playerOMoveCount = 0
+
+    for (row in 0 until BOARD_ROWS) {
+        for (column in 0 until BOARD_COLUMNS) {
+            val playerToken = boardMatrix[row][column]
+            if (playerToken == Player.X.token) playerXMoveCount++
+            if (playerToken == Player.O.token) playerOMoveCount++
+        }
+    }
+
+    return abs(playerXMoveCount - playerOMoveCount) < 2
 }
 
 fun main() {
@@ -108,7 +135,17 @@ fun main() {
 
     val isWinByX = isWinByPlayer(boardMatrix, Player.X)
     val isWinByO = isWinByPlayer(boardMatrix, Player.O)
+    val gameComplete = isGameComplete(boardMatrix) || isWinByX || isWinByO
+    val isDraw = gameComplete && !isWinByX && !isWinByO
+    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
 
-    println("isWinByX: $isWinByX")
-    println("isWinByO: $isWinByO")
+    println(
+        when {
+            isImpossible -> "Impossible"
+            !gameComplete -> "Game not finished"
+            isDraw -> "Draw"
+            isWinByX -> "X wins"
+            else -> "O wins"
+        },
+    )
 }
