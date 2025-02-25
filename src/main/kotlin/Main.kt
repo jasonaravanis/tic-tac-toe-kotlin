@@ -4,7 +4,7 @@ import kotlin.math.abs
 
 const val BOARD_ROWS = 3
 const val BOARD_COLUMNS = 3
-const val EMPTY_SPACE = '_'
+const val EMPTY_SPACE = ' '
 
 enum class Player(
     val token: Char,
@@ -13,7 +13,14 @@ enum class Player(
     O('O'),
 }
 
-fun convertBoardStringToMatrix(board: String): MutableList<MutableList<Char>> {
+typealias BoardMatrix = MutableList<MutableList<Char>>
+
+data class PlayerMove(
+    val x: Int,
+    val y: Int,
+)
+
+fun convertBoardStringToMatrix(board: String): BoardMatrix {
     val matrix =
         MutableList(BOARD_ROWS) { MutableList(BOARD_COLUMNS) { EMPTY_SPACE } }
 
@@ -30,13 +37,13 @@ fun convertBoardStringToMatrix(board: String): MutableList<MutableList<Char>> {
 
         val column = i % 3
 
-        matrix[row][column] = board[i]
+        matrix[row][column] = if (board[i] != '_') board[i] else EMPTY_SPACE
     }
 
     return matrix
 }
 
-fun printBoard(boardMatrix: MutableList<MutableList<Char>>) {
+fun printBoard(boardMatrix: BoardMatrix) {
     println(
         """
         ---------
@@ -49,7 +56,7 @@ fun printBoard(boardMatrix: MutableList<MutableList<Char>>) {
 }
 
 fun isWinByPlayer(
-    boardMatrix: MutableList<MutableList<Char>>,
+    boardMatrix: BoardMatrix,
     player: Player,
 ): Boolean {
     fun isRowWin(): Boolean {
@@ -98,7 +105,7 @@ fun isWinByPlayer(
     return isRowWin() || isColumnWin() || isDiagonalWin()
 }
 
-fun isGameComplete(boardMatrix: MutableList<MutableList<Char>>): Boolean {
+fun isGameComplete(boardMatrix: BoardMatrix): Boolean {
     var isComplete = true
     for (row in 0 until BOARD_ROWS) {
         for (column in 0 until BOARD_COLUMNS) {
@@ -111,7 +118,7 @@ fun isGameComplete(boardMatrix: MutableList<MutableList<Char>>): Boolean {
     return isComplete
 }
 
-fun isBoardStateValid(boardMatrix: MutableList<MutableList<Char>>): Boolean {
+fun isBoardStateValid(boardMatrix: BoardMatrix): Boolean {
     var playerXMoveCount = 0
     var playerOMoveCount = 0
 
@@ -126,26 +133,72 @@ fun isBoardStateValid(boardMatrix: MutableList<MutableList<Char>>): Boolean {
     return abs(playerXMoveCount - playerOMoveCount) < 2
 }
 
+fun getPlayerMoveFromInput(input: String): PlayerMove {
+    val x: Int
+    val y: Int
+    try {
+        y = input.substring(0, 1).toInt()
+        x = input.substring(2, 3).toInt()
+    } catch (error: NumberFormatException) {
+        throw NumberFormatException("You should enter numbers!")
+    }
+
+    if (x !in 1..3 || y !in 1..3) throw IllegalArgumentException("Coordinates should be from 1 to 3!")
+
+    return PlayerMove(x - 1, y - 1)
+}
+
+fun applyPlayerMoveToBoard(
+    boardMatrix: BoardMatrix,
+    playerMove: PlayerMove,
+): BoardMatrix {
+    val cellValue = boardMatrix[playerMove.y][playerMove.x]
+    if (cellValue != EMPTY_SPACE) throw IllegalArgumentException("This cell is occupied! Choose another one!")
+    boardMatrix[playerMove.y][playerMove.x] = Player.X.token
+    return boardMatrix
+}
+
+fun attemptPlayerTurn(boardMatrix: BoardMatrix): BoardMatrix {
+    var newBoardMatrix: BoardMatrix? = null
+    while (newBoardMatrix == null) {
+        try {
+            val input = readln()
+            val playerMove = getPlayerMoveFromInput(input)
+            newBoardMatrix = applyPlayerMoveToBoard(boardMatrix, playerMove)
+        } catch (exception: Exception) {
+            if (exception is NumberFormatException || exception is IllegalArgumentException) {
+                println(exception.message)
+                continue
+            } else {
+                throw exception
+            }
+        }
+    }
+    return newBoardMatrix
+}
+
 fun main() {
-    val input = readln()
-
-    val boardMatrix = convertBoardStringToMatrix(input)
-
+    val initialInput = readln()
+    val boardMatrix = convertBoardStringToMatrix(initialInput)
     printBoard(boardMatrix)
 
-    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
-    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
-    val gameComplete = isGameComplete(boardMatrix) || isWinByX || isWinByO
-    val isDraw = gameComplete && !isWinByX && !isWinByO
-    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
+    val updatedBoardMatrix = attemptPlayerTurn(boardMatrix)
 
-    println(
-        when {
-            isImpossible -> "Impossible"
-            !gameComplete -> "Game not finished"
-            isDraw -> "Draw"
-            isWinByX -> "X wins"
-            else -> "O wins"
-        },
-    )
+    printBoard(updatedBoardMatrix)
+
+//    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
+//    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
+//    val gameComplete = isGameComplete(boardMatrix) || isWinByX || isWinByO
+//    val isDraw = gameComplete && !isWinByX && !isWinByO
+//    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
+//
+//    println(
+//        when {
+//            isImpossible -> "Impossible"
+//            !gameComplete -> "Game not finished"
+//            isDraw -> "Draw"
+//            isWinByX -> "X wins"
+//            else -> "O wins"
+//        },
+//    )
 }
