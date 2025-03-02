@@ -105,7 +105,7 @@ fun isWinByPlayer(
     return isRowWin() || isColumnWin() || isDiagonalWin()
 }
 
-fun isGameComplete(boardMatrix: BoardMatrix): Boolean {
+fun isBoardFull(boardMatrix: BoardMatrix): Boolean {
     var isComplete = true
     for (row in 0 until BOARD_ROWS) {
         for (column in 0 until BOARD_COLUMNS) {
@@ -151,20 +151,24 @@ fun getPlayerMoveFromInput(input: String): PlayerMove {
 fun applyPlayerMoveToBoard(
     boardMatrix: BoardMatrix,
     playerMove: PlayerMove,
+    player: Player,
 ): BoardMatrix {
     val cellValue = boardMatrix[playerMove.y][playerMove.x]
     if (cellValue != EMPTY_SPACE) throw IllegalArgumentException("This cell is occupied! Choose another one!")
-    boardMatrix[playerMove.y][playerMove.x] = Player.X.token
+    boardMatrix[playerMove.y][playerMove.x] = player.token
     return boardMatrix
 }
 
-fun attemptPlayerTurn(boardMatrix: BoardMatrix): BoardMatrix {
+fun attemptPlayerTurn(
+    boardMatrix: BoardMatrix,
+    player: Player,
+): BoardMatrix {
     var newBoardMatrix: BoardMatrix? = null
     while (newBoardMatrix == null) {
         try {
             val input = readln()
             val playerMove = getPlayerMoveFromInput(input)
-            newBoardMatrix = applyPlayerMoveToBoard(boardMatrix, playerMove)
+            newBoardMatrix = applyPlayerMoveToBoard(boardMatrix, playerMove, player)
         } catch (exception: Exception) {
             if (exception is NumberFormatException || exception is IllegalArgumentException) {
                 println(exception.message)
@@ -177,28 +181,47 @@ fun attemptPlayerTurn(boardMatrix: BoardMatrix): BoardMatrix {
     return newBoardMatrix
 }
 
+fun isGameOver(boardMatrix: BoardMatrix): Boolean {
+    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
+    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
+    val boardFull = isBoardFull(boardMatrix) || isWinByX || isWinByO
+    val isDraw = boardFull && !isWinByX && !isWinByO
+    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
+
+    return isWinByX || isWinByO || boardFull || isDraw || isImpossible
+}
+
+fun printGameOutcome(boardMatrix: BoardMatrix) {
+    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
+    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
+    val boardFull = isBoardFull(boardMatrix) || isWinByX || isWinByO
+    val isDraw = boardFull && !isWinByX && !isWinByO
+    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
+    println(
+        when {
+            isImpossible -> "Impossible"
+            !boardFull -> "Game not finished"
+            isDraw -> "Draw"
+            isWinByX -> "X wins"
+            else -> "O wins"
+        },
+    )
+}
+
+fun rotateCurrentPlayer(player: Player): Player = if (player == Player.X) Player.O else Player.X
+
 fun main() {
-    val initialInput = readln()
-    val boardMatrix = convertBoardStringToMatrix(initialInput)
+    val initialGameState = "_________"
+    var boardMatrix = convertBoardStringToMatrix(initialGameState)
     printBoard(boardMatrix)
 
-    val updatedBoardMatrix = attemptPlayerTurn(boardMatrix)
+    var currentPlayer = Player.X
+    var gameOver = false
 
-    printBoard(updatedBoardMatrix)
-
-//    val isWinByX = isWinByPlayer(boardMatrix, Player.X)
-//    val isWinByO = isWinByPlayer(boardMatrix, Player.O)
-//    val gameComplete = isGameComplete(boardMatrix) || isWinByX || isWinByO
-//    val isDraw = gameComplete && !isWinByX && !isWinByO
-//    val isImpossible = (isWinByX && isWinByO) || !isBoardStateValid(boardMatrix)
-//
-//    println(
-//        when {
-//            isImpossible -> "Impossible"
-//            !gameComplete -> "Game not finished"
-//            isDraw -> "Draw"
-//            isWinByX -> "X wins"
-//            else -> "O wins"
-//        },
-//    )
+    while (!gameOver) {
+        boardMatrix = attemptPlayerTurn(boardMatrix, currentPlayer)
+        printBoard(boardMatrix)
+        gameOver = isGameOver(boardMatrix)
+        if (gameOver) printGameOutcome(boardMatrix) else currentPlayer = rotateCurrentPlayer(currentPlayer)
+    }
 }
